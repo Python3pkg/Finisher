@@ -6,9 +6,9 @@ import re
 try:
     xrange
     range = xrange
-    iteritems = lambda d: d.iteritems()
+    iteritems = lambda d: iter(d.items())
 except NameError:
-    iteritems = lambda d: d.items()
+    iteritems = lambda d: list(d.items())
 
 
 class RequiresTraining(Exception):
@@ -21,9 +21,7 @@ class BaseObject(object):
         super(BaseObject, self).__init__()
 
 
-class AbstractTokenizer(BaseObject):
-
-    __metaclass__ = ABCMeta
+class AbstractTokenizer(BaseObject, metaclass=ABCMeta):
 
     def __init__(self, min_n_gram_size=1, **extras):
         self.min_n_gram_size = min_n_gram_size
@@ -77,9 +75,7 @@ class AbstractTokenizer(BaseObject):
         self._store_n_gram_to_tokens(dict(n_gram_to_tokens))
 
 
-class AbstractSpellChecker(AbstractTokenizer):
-
-    __metaclass__ = ABCMeta
+class AbstractSpellChecker(AbstractTokenizer, metaclass=ABCMeta):
 
     def __init__(self, typo_deviations=2, max_word_length=10, **extras):
         self.typo_deviations = typo_deviations
@@ -165,9 +161,7 @@ class AbstractSpellChecker(AbstractTokenizer):
         return [self.correct_token(token) for token in tokens]
 
 
-class AbstractAutoCompleter(AbstractSpellChecker):
-
-    __metaclass__ = ABCMeta
+class AbstractAutoCompleter(AbstractSpellChecker, metaclass=ABCMeta):
 
     def __init__(self, min_results=5, max_results=10, score_threshold=0.2, **extras):
         self.min_results = min_results
@@ -210,7 +204,7 @@ class AbstractAutoCompleter(AbstractSpellChecker):
         for full_string, score in full_string__scores:
             collapsed_string_to_score[full_string] += score
             collapsed_string_to_occurence[full_string] += 1
-        for full_string in collapsed_string_to_score.keys():
+        for full_string in list(collapsed_string_to_score.keys()):
             percent_match = collapsed_string_to_occurence[full_string] / float(num_tokens)
             collapsed_string_to_score[full_string] *= percent_match
         return collapsed_string_to_score
@@ -235,7 +229,7 @@ class AbstractAutoCompleter(AbstractSpellChecker):
         cleaned_tokens = []
         for token in token_list:
             try:
-                unicode(token)
+                str(token)
             except UnicodeDecodeError:
                 continue
             cleaned_tokens.append(token)
@@ -327,7 +321,7 @@ class DictStorageSpellChecker(DictStorageTokenizer, AbstractSpellChecker):
 
     def _clear_spellcheck_storage(self):
         try:
-            for key in self._cls_cache["token_to_count"].keys():
+            for key in list(self._cls_cache["token_to_count"].keys()):
                 del self._cls_cache["token_to_count"][key]
         except KeyError:
             pass
